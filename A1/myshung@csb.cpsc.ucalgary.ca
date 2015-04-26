@@ -1,0 +1,81 @@
+/* CPSC 355 ASSIGNMENT 1: Basic Assembly Language Programming *
+ * Completed on 09-26-2013 by HUNG, Michael; UCID 10099049    *
+ *                                                            *
+ * This program computes the expression:                      *
+ *                                                            *
+ *       y = 2x^3 − 19x^2 + 9x + 45  for  -2 <= x <= 10       *
+ *                                                            *
+ * It will then store the minimum y within that domain of x   *
+ * and print a corresponding message.                         */
+
+output:
+        .asciz "When x = %d, y = %d. Minimum = %d\n"
+        .align 4
+        
+.global main
+        main:
+                save    %sp,    -96,    %sp
+                
+                mov     -3,     %l1             ! Domain of function is -2 <= x <= 10. Loop iterates through each of the 13 integer values.
+                clr     %i0                     ! Initialize the register for holding the minimum y.
+                
+        loop:   inc     %l1                     ! Get into the domain.
+        
+                mov     %l1,    %o0             ! x in %o0
+                mov     %l1,    %o1             ! x in %o1
+                call    .mul                    ! x * x = x^2
+                nop                             ! Result of x^2 in %o0
+                
+                call    .mul                    ! x^2 * x = x^3
+                nop                             ! Result of x^3 in %o0
+                
+                mov     2,      %o1             ! 2 in %o1
+                
+                call    .mul                    ! x^3 * 2
+                nop                             ! Result of 2x^3 in %o0
+                
+                mov     %o0,    %l2             ! Stored 2x^3 in %l2
+                
+                mov     %l1,    %o0             ! x in %o0
+                mov     %l1,    %o1             ! x in %o1
+                call    .mul                    ! x * x = x^2
+                nop                             ! Result of x^2 in %o0
+                    
+                mov     19,     %o1             ! 19 in %o1
+                
+                call    .mul                    ! x^2 * 19
+                nop                             ! 19x^2 in %o0
+                
+                mov     %o0,    %l3             ! Stored 19x^2 in %l3
+                
+                mov     %l1,    %o0             ! x in %o0
+                mov     9,      %o1             ! 9 in %o1
+                call    .mul                    ! x * 9 = 9x
+                nop                             ! Result of 9x in %o0                
+
+                add     %o0,    45,     %l4     ! Compute 9x + 45 and store result in %l4
+                
+                sub     %l2,    %l3,    %l5     ! Compute 2x^3 - 19x^2 and store result in %l5
+                add     %l5,    %l4,    %l5     ! Compute 2x^3 - 19x^2 + 9x + 45 and store result in %l5
+                
+                set     fmt,    %o0             ! Store output string to %o0 as first argument for printf
+                mov     %l5,    %o2             ! Store newly computed y-value as third argument for printf
+                
+                subcc   %i0,    %l5,    %g0     ! Compare the newly computed y-value to the current minimum
+                bge     output                  ! If subcc returns a value greater than 0, then the new y-value is smaller than the old minimum. Go to output branch, store it as the new minimum, and print a message
+                nop
+                
+        next:   mov     %l5,    %i0             ! Set the new minimum
+                
+                mov     %l1,    %o1             ! Store current x-value as second argument for printf
+                mov     %i0,    %o2             ! Store current minimum as fourth argument for printf
+                
+                call    printf
+                nop
+                
+                cmp     %l1,    10              ! Are we still within the domain?
+                bl      loop                    ! If so, execute the loop again.
+                nop
+                
+                mov     1,      %g1
+                ta      0

@@ -1,0 +1,101 @@
+! CPSC 355 ASSIGNMENT 1: Basic Assembly Language Programming
+! ==========================================================
+! Completed on 09-25-2013 by HUNG, Michael (UCID: 10099049)
+!                 
+! This program computes the expression:
+
+!       y = 2x^3 − 19x^2 + 9x + 45  for  -2 <= x <= 10
+
+! It will then store the minimum y within that domain of x
+! and print a corresponding message.
+!
+! As opposed to c355a1_m.s, this version does not implement
+! macros and is unoptimized.
+        
+
+
+.global main
+        main:   save    %sp,    -96,    %sp
+                
+                mov     -3,     %l1                     ! Domain of function is -2 <= x <= 10. Loop iterates through each of the 13 integer values.
+                clr     %l0                             ! Initialize the register for holding the minimum y.
+                
+                loop:   inc     %l1                     ! First iteration: enter the domain. All following iterations: update the domain.
+
+                        mov     %l1,    %o0             ! x in %o0
+                        mov     %l1,    %o1             ! x in %o1
+                        call    .mul                    ! x * x = x^2
+                        nop                             ! Result of x^2 in %o0
+                        
+                        mov     %o0,    %o1             ! x^2 in %o1
+                        mov     %l1,    %o0             ! x in %o0
+                        call    .mul                    ! x * x^2 = x^3
+                        nop                             ! Result of x^3 in %o0
+                        
+                        mov     %o0,    %o1             ! x^3 in o1
+                        mov     2,      %o0             ! 2 in %o0
+                        call    .mul                    ! 2 * x^3
+                        nop                             ! Result of 2x^3 in %o0
+                        
+                        mov     %o0,    %l2             ! Stored 2x^3 in %l2. First term stored.
+                        
+                        mov     %l1,    %o0             ! x in %o0
+                        mov     %l1,    %o1             ! x in %o1
+                        call    .mul                    ! x * x = x^2
+                        nop                             ! Result of x^2 in %o0
+                        
+                        mov     %o0,    %o1             ! x^2 in %o1
+                        mov     19,     %o0             ! 19 in %o0
+                        call    .mul                    ! 19 * x^2
+                        nop                             ! 19x^2 in %o0
+                    
+                        mov     %o0,    %l3             ! Stored 19x^2 in %l3. Second term stored.
+                
+                        mov     %l1,    %o0             ! x in %o0
+                        mov     9,      %o1             ! 9 in %o1
+                        call    .mul                    ! x * 9 = 9x
+                        nop                             ! Result of 9x in %o0
+                        
+                        mov     %o0,    %l4             ! Stored 9x to %l4
+                        add     %l4,    45,     %l4     ! Compute 9x + 45 and store result in %l4. Third and Fourth terms stored.
+                
+                        sub     %l2,    %l3,    %l5     ! Compute 2x^3 - 19x^2 and store result in %l5
+                        add     %l4,    %l5,    %l5     ! Compute 2x^3 - 19x^2 + 9x + 45 and store result in %l5. Computation for y-value is complete.
+                
+                        cmp     %l0,    %l5             ! Compare the newly computed y-value to the current minimum
+                        bge     setMin                  ! If cmp returns a value greater than 0, then the new y-value is smaller than the old minimum. Go to setMin branch, store it as the new minimum, and print a message
+                        nop
+
+                        set     output, %o0             ! Store output string to %o0 as first argument for printf
+                        mov     %l5,    %o2             ! Store newly computed y-value as third argument for printf
+                        mov     %l1,    %o1             ! Store current x-value as second argument for printf
+                        mov     %l0,    %o3             ! Store current minimum as fourth argument for printf
+                
+                        call    printf                  ! Print the output message.
+                        nop
+                                
+                        cmp     %l1,    10              ! Are we still within the domain?
+                        bl      loop                    ! If so, execute the loop branch again.
+                        nop
+                                        
+                        ba      done                    ! We are outside the domain, now. Skip setMin and end the program at the done branch.
+
+                setMin: mov     %l5,    %l0             ! Set the new minimum
+
+                        set     output, %o0             ! Store output string to %o0 as first argument for printf
+                        mov     %l5,    %o2             ! Store newly computed y-value as third argument for printf
+                        mov     %l1,    %o1             ! Store current x-value as second argument for printf
+                        mov     %l0,    %o3             ! Store current minimum as fourth argument for printf
+                        
+                        call    printf                  ! Print the output message.
+                        nop
+                                
+                        cmp     %l1,    10              ! Are we still within the domain?
+                        bl      loop                    ! If so, execute the loop branch again.
+                        nop             
+       
+                output: .asciz "When x = %d, y = %d. The minimum = %d\n"    ! Output string for printing appropriate message.
+                        .align 4          
+     
+                done:   mov     1,      %g1             
+                        ta      0
